@@ -2,10 +2,12 @@ import json
 import logging
 import os
 import uuid
+
 import boto3
 
 LOG = logging.getLogger()
 LOG.setLevel(logging.INFO)
+
 
 def main(event, context):
     LOG.info("EVENT : " + json.dumps(event))
@@ -19,8 +21,8 @@ def main(event, context):
         if path_parameters["proxy"] is not None:
             return read_short_url(event)
     return {
-        "statusCode" : 200,
-        "body" : "usage: ?targetUrl=URL"
+        "statusCode": 200,
+        "body": "usage: ?targetUrl=URL"
     }
 
 
@@ -37,16 +39,17 @@ def create_short_url(event):
     })
 
     url = "https://" \
-        + event["requestContext"]["domainName"] \
-        + event["requestContext"]["path"]
+          + event["requestContext"]["domainName"] \
+          + event["requestContext"]["path"]
     url += "/" if url[-1] != "/" else ""
     url += id
 
     return {
         "statusCode": 200,
-        "header" : {"Content-Type": "text/plain"},
-        "body" : "Created URL: %s" % url
+        "headers": {"Content-Type": "text/plain"},
+        "body": "Created URL: %s" % url
     }
+
 
 def read_short_url(event):
     id = event["pathParameters"]["proxy"]
@@ -54,19 +57,19 @@ def read_short_url(event):
     ddb = boto3.resource("dynamodb")
     table = ddb.Table(table_name)
     response = table.get_item(Key={"id": id})
-    Log.debug("RESPONSE: " + json.dumps(response))
+    LOG.debug("RESPONSE: " + json.dumps(response))
 
     item = response.get("Item", None)
     if item is None:
         return {
-            "statusCode" : 400,
-            "headers" : {"Content-Type": "text/plain"},
-            "body" : "No redirect found for" + id
+            "statusCode": 400,
+            "headers": {"Content-Type": "text/plain"},
+            "body": "No redirect found for" + id
         }
 
     return {
-        "statusCode" : 301,
-        "headers" : {
-            "Location" : item.get("target_url")
+        "statusCode": 301,
+        "headers": {
+            "Location": item.get("target_url")
         }
     }
